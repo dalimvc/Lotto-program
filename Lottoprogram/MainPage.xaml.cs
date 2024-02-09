@@ -31,18 +31,19 @@ namespace Lottoprogram
         int fives = 0;
         int sixes = 0;
         int sevens = 0;
-
+        bool checkInput;
         Random randomNumber = new Random();
-
         List<int> enteredLottoNumbers = new List<int>();
-
         List<List<int>> generatedLottoSeries = new List<List<int>>();   
 
+        //Method gets values from users' input and tries to parse it as an int and if successfull adds those values into a list
+        //otherwise error message if uppdated
+        //checkInput will be used to update result, when the first time user has entered correct input but some of the following times input is not correct
+        //between different round list is erased and the same goes for the error message
         public void GetNumbers()
         {
             errorMessage= string.Empty;
             enteredLottoNumbers.Clear();
-
             try
             {
                 int.TryParse(number1.Text, out int value1);
@@ -52,7 +53,6 @@ namespace Lottoprogram
                 int.TryParse(number5.Text, out int value5);
                 int.TryParse(number6.Text, out int value6);
                 int.TryParse(number7.Text, out int value7);
-
                 enteredLottoNumbers.Add(value1);
                 enteredLottoNumbers.Add(value2);
                 enteredLottoNumbers.Add(value3);
@@ -62,44 +62,55 @@ namespace Lottoprogram
                 enteredLottoNumbers.Add(value7);
             }
             catch{
-                errorMessage = "All fields are required and you can enter only numbers between 1-35!";
+                checkInput = false;
+                errorMessage = "Alla fält är obligatoriska och du kan endast ange nummer mellan 1-35!";
+                ErrorMessageTextBlock.Text = errorMessage;
             }
-            ErrorMessageTextBlock.Text = errorMessage;
         }
 
+        //works the same way as the previous method, only this time, the method tries to parse number of rounds
         public void GetNrOfRounds()
-        {   
+        {
             try
             {
-                rounds = int.Parse(nrDraws.Text);
+                int.TryParse(nrDraws.Text, out rounds);
             }
             catch
             {
-                errorMessage = "Number of rounds must be a positive number!";
+                checkInput = false;
+                errorMessage = "Antal dragningar måste vara ett positivt nummer!";
+                ErrorMessageTextBlock.Text = errorMessage;
             }
-            ErrorMessageTextBlock.Text = errorMessage;
         }
 
+        //even if parsing was successful, input might be wrong; 2 or more numbers can be the same or they can be 0 or less or bigger than 35
+        //number of round can not be 0 or less than 0
+        //method checks input and if it is not correct appropriate error message will be shown
         public void CheckNumberValidity()
         {
             for (int i = 0; i< enteredLottoNumbers.Count -1; i++)
             {
                 if (enteredLottoNumbers[i] < 1 || enteredLottoNumbers[i] > 35)
                 {
-                    errorMessage = "Numbers must be between 1 and 35! Wrong entry.";
+                    checkInput = false;
+                    errorMessage = "Numren måste vara mellan 1 och 35! Felaktig inmatning.";
                 }
                 else if (enteredLottoNumbers[i] == enteredLottoNumbers[i + 1])
                 {
-                    errorMessage = "You can't enter same number more than once! Wrong entry.";
+                    checkInput = false;
+                    errorMessage = "Du kan inte ange samma nummer mer än en gång! Felaktig inmatning.";
                 } 
-                else if (rounds < 0)
+                else if (rounds <= 0)
                 {
-                    errorMessage = "Number of rounds must be a positive number! Wrong entry.";
-                }     
+                    checkInput = false;
+                    errorMessage = "Fältet är obligatoriskt och det måste vara ett positivt nummer! Felaktig inmatning.";
+                } 
             }
             ErrorMessageTextBlock.Text = errorMessage;
         }
 
+        //method that generates one lotto series with 7 numbers between 1 and 35
+        //method returns an list
         public List<int> generateLottoNumbers()
         {
             List<int> generatedLottoNumbers = new List<int>();
@@ -117,8 +128,9 @@ namespace Lottoprogram
             return generatedLottoNumbers;
         }
 
-
-
+        //method that generates n-amount of lotto series based on users input "antal dragningar"
+        //method returns list of list type int
+        //between 2 rounds list is cleared
         public List<List<int>> generateLottoSeriers()
         {
             generatedLottoSeries.Clear();
@@ -128,18 +140,14 @@ namespace Lottoprogram
                 generatedLottoSeries.Add(generateLottoNumbers());
                 counter++;
             }
-
-
-
-
-
-
-
-
-            Debug.WriteLine(generatedLottoSeries.Count);
             return generatedLottoSeries;
         }
 
+        //counting number if matches between users input and computr's generated lotto series
+        //it loops through outer list and than throught each inner list that contains 1 lotto series
+        //method checks in each inner list how many mathes there are with user's input
+        //than number of mathes will uppdate
+        //first checks 7s, than 6s and at the end 5s in order to awoid 7s being counted in 5s and 6s
         public int CountOccurrences()
         {
             sevens= 0;
@@ -154,63 +162,62 @@ namespace Lottoprogram
                     if (lottoCombination.Contains(number))
                     {
                         counterMatches++;
-                        if (counterMatches == 7)
-                        {
-                            sevens++;
-                        } else if(counterMatches == 6)
-                        {
-                            sixes++;
-                        } else if(counterMatches == 5)
-                        {
-                            fives++;
-                        }
+
+                    }
+                    if (counterMatches == 7)
+                    {
+                        sevens++;
+                    }
+                    else if (counterMatches == 6)
+                    {
+                        sixes++;
+                    }
+                    else if (counterMatches == 5)
+                    {
+                        fives++;
                     }
                 }
             }
             return counterMatches;
         }
 
+        //based on result from a method CountOccurrences(), text that shows matches updates
+        //if...else statement is for the case user enters correct input than wrong input
+        //when it's wrong input results will be 0
         public void updateTextresult()
         {
-            fiveMatches.Text = fives.ToString();
-            sixMatches.Text = sixes.ToString();
-            SevenMatches.Text = sevens.ToString();
+            if(checkInput== true)
+            {
+                fiveMatches.Text = fives.ToString();
+                sixMatches.Text = sixes.ToString();
+                SevenMatches.Text = sevens.ToString();
+            }
+            else
+            {
+                fiveMatches.Text = "0";
+                sixMatches.Text = "0";
+                SevenMatches.Text = "0";
+            }
+
         }
 
-
-
-
+        //"main method" that runs all previously declared methods
+        //checkInput (user has entered correct input) is initialy true but gets changes in methods that check users' input
+        //if input is false methods where conputer generates lotto series won't be running
         private void RunLotto(object sender, RoutedEventArgs e)
         {
-
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-
+            checkInput= true;
             updateTextresult();
             GetNumbers();
             GetNrOfRounds();
             CheckNumberValidity();
-            generateLottoSeriers();
-            CountOccurrences();
+            if (checkInput == true)
+            {
+                generateLottoSeriers();
+                CountOccurrences();    
+            }
             updateTextresult();
-
-
-            stopwatch.Stop();
-            Debug.WriteLine($"Time taken to generate {rounds} rounds: {stopwatch.Elapsed.TotalSeconds} seconds");
-            Debug.WriteLine("Fives: " + fives);
-            Debug.WriteLine("Sixes: " + sixes);
-            Debug.WriteLine("Sevens: " + sevens);
         }
 
-
-        private void TextBlock_SelectionChanged(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void TextBlock_SelectionChanged_1(object sender, RoutedEventArgs e)
-        {
-
-        }
     }
 }
